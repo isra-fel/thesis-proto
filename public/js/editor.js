@@ -71,62 +71,110 @@ class Editor {
             if (this.selected) {
                 this.selected.position.x = ev.target.value;
             }
+            this.updateBox();
             this.render();
         });
         $('#object-position-y').change(ev => {
             if (this.selected) {
                 this.selected.position.y = ev.target.value;
             }
+            this.updateBox();
             this.render();
         });
         $('#object-position-z').change(ev => {
             if (this.selected) {
                 this.selected.position.z = ev.target.value;
             }
+            this.updateBox();
             this.render();
         });
         $('#object-rotation-x').change(ev => {
             if (this.selected) {
                 this.selected.rotation.x = ev.target.value;
             }
+            this.updateBox();
             this.render();
         });
         $('#object-rotation-y').change(ev => {
             if (this.selected) {
                 this.selected.rotation.y = ev.target.value;
             }
+            this.updateBox();
             this.render();
         });
         $('#object-rotation-z').change(ev => {
             if (this.selected) {
                 this.selected.rotation.z = ev.target.value;
             }
+            this.updateBox();
             this.render();
         });
         $('#object-scale-x').change(ev => {
             if (this.selected) {
                 this.selected.scale.x = ev.target.value;
             }
+            this.updateBox();
             this.render();
         });
         $('#object-scale-y').change(ev => {
             if (this.selected) {
                 this.selected.scale.y = ev.target.value;
             }
+            this.updateBox();
             this.render();
         });
         $('#object-scale-z').change(ev => {
             if (this.selected) {
                 this.selected.scale.z = ev.target.value;
             }
+            this.updateBox();
             this.render();
+        });
+        $('#sphere-geometry-radius').change(ev => {
+            if (this.selected) {
+                let widthSegments = this.selected.geometry.parameters.widthSegments,
+                    heightSegments = this.selected.geometry.parameters.heightSegments;
+                let newSphere = new THREE.Mesh(new THREE.SphereGeometry(ev.target.value, widthSegments, heightSegments),
+                    this.selected.material
+                );
+                this.scene.remove(this.selected);
+                this.selected = newSphere;
+                this.scene.add(this.selected);
+                this.updateBox();
+                this.render();
+            }
+        });
+        $('#sphere-geometry-width-seg').change(ev => {
+            if (this.selected) {
+                let radius = this.selected.geometry.parameters.radius,
+                    heightSegments = this.selected.geometry.parameters.heightSegments;
+                let newSphere = new THREE.Mesh(new THREE.SphereGeometry(radius, ev.target.value, heightSegments),
+                    this.selected.material
+                );
+                this.scene.remove(this.selected);
+                this.selected = newSphere;
+                this.scene.add(this.selected);
+                this.updateBox();
+                this.render();
+            }
+        });
+        $('#sphere-geometry-height-seg').change(ev => {
+            if (this.selected) {
+                let radius = this.selected.geometry.parameters.radius,
+                    widthSegments = this.selected.geometry.parameters.widthSegments;
+                let newSphere = new THREE.Mesh(new THREE.SphereGeometry(radius, widthSegments, ev.target.value),
+                    this.selected.material
+                );
+                this.scene.remove(this.selected);
+                this.selected = newSphere;
+                this.scene.add(this.selected);
+                this.updateBox();
+                this.render();
+            }
         });
     }
     
     render() {
-        if (this.box) {
-            this.box.update();
-        }
         this.renderer.render(this.scene, this.camera);
     }
     
@@ -137,6 +185,9 @@ class Editor {
             })
         );
         this.scene.add(sphere);
+        this.selected = sphere;
+        this.updateBox();
+        this.updateOptions();
         this.render();
     }
     
@@ -191,6 +242,7 @@ class Editor {
         this.resetBox();
         if (this.selected) {
             this.box = new THREE.BoundingBoxHelper(this.selected, 0xff0000);
+            this.box.update();
             this.scene.add(this.box);
             this.render();
         }
@@ -221,6 +273,11 @@ class Editor {
         $('#object-scale-x').val(obj.scale.x);
         $('#object-scale-y').val(obj.scale.y);
         $('#object-scale-z').val(obj.scale.z);
+        let geo = obj.geometry;
+        $('#geometry-type').val(geo.type);
+        $('#sphere-geometry-radius').val(geo.parameters.radius);
+        $('#sphere-geometry-width-seg').val(geo.parameters.widthSegments);
+        $('#sphere-geometry-height-seg').val(geo.parameters.heightSegments);
     }
     
     resetOptions() {
@@ -236,6 +293,10 @@ class Editor {
         $('#object-scale-x').val(undefined);
         $('#object-scale-y').val(undefined);
         $('#object-scale-z').val(undefined);
+        $('#geometry-type').val(undefined);
+        $('#sphere-geometry-radius').val(undefined);
+        $('#sphere-geometry-width-seg').val(undefined);
+        $('#sphere-geometry-height-seg').val(undefined);
     }
 }
 

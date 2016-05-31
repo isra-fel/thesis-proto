@@ -104,20 +104,20 @@
 							<br />
 							<div id="sphere-geometry-options">
 								<label>Radius</label>
-								<input type="number" id="sphere-geometry-radius" />
+								<input type="number" id="sphere-geometry-radius" min=0 />
 								<br />
 								<label>Width segments</label>
-								<input type="number" id="sphere-geometry-width-seg" disabled />
+								<input type="number" id="sphere-geometry-width-seg" min="3" />
 								<br />
 								<label>Height segments</label>
-								<input type="number" id="sphere-geometry-height-seg" disabled />
+								<input type="number" id="sphere-geometry-height-seg" min="2" />
 								<br />
 							</div>
 						</form>
 					</div>
 					<div role="tabpanel" class="tab-pane" id="material-options">
 						<form class="material-form">
-							<input type="button" value="333" />
+							<input type="color" id="testcolor" />
 						</form>
 					</div>
 				</div>
