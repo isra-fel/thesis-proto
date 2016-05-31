@@ -2,14 +2,127 @@
 <html>
 	<head>
 		<meta charset=utf-8>
-		<title>My first Three.js app</title>
+		<title>3D Editor</title>
+		<link rel="stylesheet" href="//cdn.bootcss.com/bootstrap/3.3.5/css/bootstrap.min.css">
 		<style>
-			body { margin: 0; }
-			canvas { width: 100%; height: 100% }
+			body { margin: 0; min-width: 1072px; }
+			canvas { width: 800px; height: 450px; display: inline-block; }
+			.navbar { margin-bottom: 10px; }
+			.forms { display: inline-block; vertical-align: top; margin-left: 10px; }
 		</style>
+		<script src="//cdn.bootcss.com/jquery/1.11.3/jquery.min.js"></script>
+		<script src="//cdn.bootcss.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
 	</head>
 	<body>
-		<canvas id="canvas"></canvas>
+		<nav class="navbar navbar-default">
+			<div class="container-fluid">
+				<!-- Brand and toggle get grouped for better mobile display -->
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="#">Editor</a>
+				</div>
+
+				<!-- Collect the nav links, forms, and other content for toggling -->
+				<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+					<ul class="nav navbar-nav">
+						<li class="dropdown">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Add<span class="caret"></span></a>
+							<ul class="dropdown-menu">
+								<li><a href="#" id="add-sphere">Sphere</a></li>
+								<li role="separator" class="divider"></li>
+								<li><a href="#" id="add-cube">Cube</a></li>
+							</ul>
+						</li>
+					</ul>
+				</div><!-- /.navbar-collapse -->
+			</div><!-- /.container-fluid -->
+		</nav>
+		<div>
+			<canvas id="canvas"></canvas>
+			<div class="forms" role="navigation">
+				<ul class="nav nav-pills" role="tablist">
+					<li role="presentation" class="active"><a href="#object-options" aria-controls="object-options" role="tab" data-toggle="pill">Object</a></li>
+					<li role="presentation"><a href="#geometry-options" aria-controls="geometry-options" role="tab" data-toggle="pill">Geometry</a></li>
+					<li role="presentation"><a href="#material-options" aria-controls="material-options" role="tab" data-toggle="pill">Material</a></li>
+				</ul>
+				<div class="tab-content">
+					<div role="tabpanel" class="tab-pane active" id="object-options">
+						<form class="object-form">
+							<label>Type</label>
+							<input type="text" id="object-type" disabled />
+							<br />
+							<label>UUID</label>
+							<input type="text" id="object-uuid" disabled />
+							<br />
+							<label>Name</label>
+							<input type="text" id="object-name" />
+							<br />
+							<label>Position</label>
+							<br />
+							<label>x</label>
+							<input type="number" id="object-position-x" />
+							<br />
+							<label>y</label>
+							<input type="number" id="object-position-y" />
+							<br />
+							<label>z</label>
+							<input type="number" id="object-position-z" />
+							<br />
+							<label>Rotation</label>
+							<br />
+							<label>x</label>
+							<input type="number" id="object-rotation-x" />
+							<br />
+							<label>y</label>
+							<input type="number" id="object-rotation-y" />
+							<br />
+							<label>z</label>
+							<input type="number" id="object-rotation-z" />
+							<br />
+							<label>Scale</label>
+							<br />
+							<label>x</label>
+							<input type="number" id="object-scale-x" />
+							<br />
+							<label>y</label>
+							<input type="number" id="object-scale-y" />
+							<br />
+							<label>z</label>
+							<input type="number" id="object-scale-z" />
+							<br />
+						</form>
+					</div>
+					<div role="tabpanel" class="tab-pane" id="geometry-options">
+						<form class="geometry-form">
+							<label>Type</label>
+							<input type="text" id="geometry-type" disabled />
+							<br />
+							<div id="sphere-geometry-options">
+								<label>Radius</label>
+								<input type="number" id="sphere-geometry-radius" />
+								<br />
+								<label>Width segments</label>
+								<input type="number" id="sphere-geometry-width-seg" disabled />
+								<br />
+								<label>Height segments</label>
+								<input type="number" id="sphere-geometry-height-seg" disabled />
+								<br />
+							</div>
+						</form>
+					</div>
+					<div role="tabpanel" class="tab-pane" id="material-options">
+						<form class="material-form">
+							<input type="button" value="333" />
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
 		<script src="../lib/three.min.js"></script>
 		<script src="../js/editor.js"></script>
 	</body>
