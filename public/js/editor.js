@@ -178,7 +178,9 @@ class Editor {
     }
     
     render() {
-        this.renderer.render(this.scene, this.camera);
+        requestAnimationFrame(() => {
+            this.renderer.render(this.scene, this.camera);
+        });
     }
     
     addSphere() {
