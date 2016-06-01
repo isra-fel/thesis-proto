@@ -17,7 +17,10 @@ class Editor {
         this.bindInputEvents();
         this.selected = undefined;
         this.box = undefined;
+        this.allObj = [];
         this.render();
+        this.socket = io.connect('http://localhost');
+        this.startListen();
     }
     
     addGrid() {
@@ -179,16 +182,17 @@ class Editor {
     }
     
     addSphere() {
-        let sphere = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12),
-            new THREE.MeshBasicMaterial({
-                color: 0xfffc00
-            })
-        );
-        this.scene.add(sphere);
-        this.selected = sphere;
+        let geometry = new SphereGeometry(1, 16, 12),
+            material = new MeshBasicMaterial(0xfffc00),
+            sphere = new Mesh(geometry, material),
+            addChange = new AddChange(sphere);
+        this.allObj.push(sphere);
+        this.scene.add(sphere.three);
+        this.selected = sphere.three;
         this.updateBox();
         this.updateOptions();
         this.render();
+        addChange.broadcast(this.socket);
     }
     
     addAxis() {
@@ -297,6 +301,143 @@ class Editor {
         $('#sphere-geometry-radius').val(undefined);
         $('#sphere-geometry-width-seg').val(undefined);
         $('#sphere-geometry-height-seg').val(undefined);
+    }
+    
+    startListen() {
+        this.socket.on('add', mesh => {
+            console.log('new mesh: ' + JSON.toString(mesh));
+            if (this.allObj.find(obj => obj.uuid === mesh.uuid)) {
+                return;
+            }
+            let geometry = mesh.geometry,
+                material = mesh.material;
+            switch (geometry.type) {
+                case 'SphereGeometry':
+                    Object.setPrototypeOf(geometry, SphereGeometry.prototype);
+                    break;
+                default:
+                    break;
+            }
+            switch (material.type) {
+                case 'MeshBasicMaterial':
+                    Object.setPrototypeOf(material, MeshBasicMaterial.prototype);
+                    break;
+                default:
+                    break;
+            }
+            Object.setPrototypeOf(mesh, Mesh.prototype);
+            this.scene.add(mesh.three);
+            this.render();
+        });
+    }
+}
+
+class Change {
+    constructor(changeType) {
+        this.changeType = changeType;
+    }
+}
+
+class ModifyChange extends Change {
+    constructor(uuid, propertyName, newValue) {
+        super('modify');
+        this.uuid = uuid;
+        this.propertyName = propertyName;
+        this.newValue = newValue;
+    }
+}
+
+class AddChange extends Change {
+    constructor(mesh) {
+        super('add');
+        this.mesh = mesh;
+    }
+    broadcast(socket) {
+        socket.emit('add', this.mesh);
+    }
+}
+
+class RemoveChange extends Change {
+    constructor(uuid) {
+        super('remove');
+        this.uuid = uuid;
+    }
+}
+
+class Mesh {
+    constructor(geometry, material) {
+        this.geometry = geometry;
+        this.material = material;
+        this.uuid = uuid.next();
+        this.position = {x:0, y:0, z:0};
+        this.rotation = {x:0, y:0, z:0};
+        this.scale = {x:1, y:1, z:1};
+    }
+    get three() {
+        if (!this._three) {
+            Object.defineProperty(this, '_three', {
+                value: new THREE.Mesh(this.geometry.three, this.material.three),
+                enumerable: false
+            });
+            this._three.CEModel = this;
+        }
+        return this._three;
+    }
+}
+
+class Geometry {
+    constructor(type) {
+        this.type = type;
+    }
+}
+
+class SphereGeometry extends Geometry {
+    constructor(radius, widthSegments, heightSegments) {
+        super('SphereGeometry');
+        this.radius = radius;
+        this.widthSegments = widthSegments;
+        this.heightSegments = heightSegments;
+    }
+    get three() {
+        if (!this._three) {
+            Object.defineProperty(this, '_three', {
+                value: new THREE.SphereGeometry(this.radius, this.widthSegments, this.heightSegments),
+                enumerable: false
+            });
+        }
+        return this._three;
+    }
+}
+
+class Material {
+    constructor(type) {
+        this.type = type;
+    }
+}
+
+class MeshBasicMaterial extends Material {
+    constructor(color) {
+        super('MeshBasicMaterial');
+        this.color = color;
+    }
+    get three() {
+        if (!this._three) {
+            Object.defineProperty(this, '_three', {
+                value: new THREE.MeshBasicMaterial({color: this.color}),
+                enumerable: false
+            });
+        }
+        return this._three;
+    }
+}
+
+class uuid {
+    static next() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+            let r = Math.random()*16|0,
+                v = c == 'x' ? r : (r&0x3|0x8);
+            return v.toString(16);
+        });
     }
 }
 
