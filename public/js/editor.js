@@ -21,16 +21,23 @@ class Editor {
         this.render();
         this.socket = io.connect('http://localhost');
         this.startListen();
+        this.uuid = uuid.next();
     }
-    
+
+    getObjById(id) {
+        return this.allObj.find(obj => obj.uuid === id);
+    }
+
     addGrid() {
         let gridHelper = new THREE.GridHelper(this.gridSize, 1);
         this.scene.add(gridHelper);
     }
-    
+
     bindMouseEvents() {
         this.canvas.addEventListener('mousedown', () => {
+            let isClick = true;
             let onmove = ev => {
+                isClick = false;
                 let dx = ev.movementX,
                     dy = ev.movementY,
                     dalpha = dy / 5000, //纵向
@@ -42,12 +49,20 @@ class Editor {
                 this.camera.lookAt(new THREE.Vector3(0, 0, 0));
                 this.render();
             };
-            this.canvas.addEventListener('mousemove', onmove);
-            document.addEventListener('mouseup', () => {
+            let onmouseup = ev => {
                 this.canvas.removeEventListener('mousemove', onmove);
-            });
+                if (isClick) {
+                    let intersect = this.getIntersect(ev);
+                    this.selected = intersect ? intersect.object.CEModel : undefined;
+                    this.updateBox();
+                    this.updateOptions();
+                }
+                document.removeEventListener('mouseup', onmouseup);
+            };
+            this.canvas.addEventListener('mousemove', onmove);
+            document.addEventListener('mouseup', onmouseup)
         });
-        
+
         this.canvas.addEventListener('mousewheel', ev => {
             let dy = ev.deltaY / 100,
                 camera = this.camera.position;
@@ -56,23 +71,21 @@ class Editor {
             }
             this.render();
         });
-        
-        this.canvas.addEventListener('click', ev => {
-            let intersect = this.getIntersect(ev);
-            this.selected = intersect ? intersect.object : undefined;
-            this.updateBox();
-            this.updateOptions();
-        });
     }
-    
+
     bindMenuEvents() {
         document.getElementById('add-sphere').addEventListener('click', this.addSphere.bind(this));
+        document.getElementById('add-cube').addEventListener('click', this.addCube.bind(this));
     }
-    
+
     bindInputEvents() {
         $('#object-position-x').change(ev => {
             if (this.selected) {
                 this.selected.position.x = ev.target.value;
+                this.selected.update();
+
+                let modify = new ModifyChange(this.uuid, this.selected.uuid, 'position.x', ev.target.value);
+                this.socket.emit('modify', modify);
             }
             this.updateBox();
             this.render();
@@ -80,6 +93,10 @@ class Editor {
         $('#object-position-y').change(ev => {
             if (this.selected) {
                 this.selected.position.y = ev.target.value;
+                this.selected.update();
+
+                let modify = new ModifyChange(this.uuid, this.selected.uuid, 'position.y', ev.target.value);
+                this.socket.emit('modify', modify);
             }
             this.updateBox();
             this.render();
@@ -87,6 +104,10 @@ class Editor {
         $('#object-position-z').change(ev => {
             if (this.selected) {
                 this.selected.position.z = ev.target.value;
+                this.selected.update();
+
+                let modify = new ModifyChange(this.uuid, this.selected.uuid, 'position.z', ev.target.value);
+                this.socket.emit('modify', modify);
             }
             this.updateBox();
             this.render();
@@ -94,6 +115,10 @@ class Editor {
         $('#object-rotation-x').change(ev => {
             if (this.selected) {
                 this.selected.rotation.x = ev.target.value;
+                this.selected.update();
+
+                let modify = new ModifyChange(this.uuid, this.selected.uuid, 'rotation.x', ev.target.value);
+                this.socket.emit('modify', modify);
             }
             this.updateBox();
             this.render();
@@ -101,6 +126,10 @@ class Editor {
         $('#object-rotation-y').change(ev => {
             if (this.selected) {
                 this.selected.rotation.y = ev.target.value;
+                this.selected.update();
+
+                let modify = new ModifyChange(this.uuid, this.selected.uuid, 'rotation.y', ev.target.value);
+                this.socket.emit('modify', modify);
             }
             this.updateBox();
             this.render();
@@ -108,6 +137,10 @@ class Editor {
         $('#object-rotation-z').change(ev => {
             if (this.selected) {
                 this.selected.rotation.z = ev.target.value;
+                this.selected.update();
+
+                let modify = new ModifyChange(this.uuid, this.selected.uuid, 'rotation.z', ev.target.value);
+                this.socket.emit('modify', modify);
             }
             this.updateBox();
             this.render();
@@ -115,6 +148,10 @@ class Editor {
         $('#object-scale-x').change(ev => {
             if (this.selected) {
                 this.selected.scale.x = ev.target.value;
+                this.selected.update();
+
+                let modify = new ModifyChange(this.uuid, this.selected.uuid, 'scale.x', ev.target.value);
+                this.socket.emit('modify', modify);
             }
             this.updateBox();
             this.render();
@@ -122,6 +159,10 @@ class Editor {
         $('#object-scale-y').change(ev => {
             if (this.selected) {
                 this.selected.scale.y = ev.target.value;
+                this.selected.update();
+
+                let modify = new ModifyChange(this.uuid, this.selected.uuid, 'scale.y', ev.target.value);
+                this.socket.emit('modify', modify);
             }
             this.updateBox();
             this.render();
@@ -129,18 +170,22 @@ class Editor {
         $('#object-scale-z').change(ev => {
             if (this.selected) {
                 this.selected.scale.z = ev.target.value;
+                this.selected.update();
+
+                let modify = new ModifyChange(this.uuid, this.selected.uuid, 'scale.z', ev.target.value);
+                this.socket.emit('modify', modify);
             }
             this.updateBox();
             this.render();
         });
         $('#sphere-geometry-radius').change(ev => {
             if (this.selected) {
-                let widthSegments = this.selected.geometry.parameters.widthSegments,
-                    heightSegments = this.selected.geometry.parameters.heightSegments;
+                let widthSegments = this.selected.geometry.widthSegments,
+                    heightSegments = this.selected.geometry.heightSegments;
                 let newSphere = new THREE.Mesh(new THREE.SphereGeometry(ev.target.value, widthSegments, heightSegments),
-                    this.selected.material
+                    this.selected.three.material
                 );
-                this.scene.remove(this.selected);
+                this.scene.remove(this.selected.three);
                 this.selected = newSphere;
                 this.scene.add(this.selected);
                 this.updateBox();
@@ -176,63 +221,77 @@ class Editor {
             }
         });
     }
-    
+
     render() {
         requestAnimationFrame(() => {
             this.renderer.render(this.scene, this.camera);
         });
     }
-    
+
     addSphere() {
         let geometry = new SphereGeometry(1, 16, 12),
-            material = new MeshBasicMaterial(0xfffc00),
+            material = MeshBasicMaterial.default(),
             sphere = new Mesh(geometry, material),
             addChange = new AddChange(sphere);
         this.allObj.push(sphere);
         this.scene.add(sphere.three);
-        this.selected = sphere.three;
+        this.selected = sphere;
         this.updateBox();
         this.updateOptions();
         this.render();
         addChange.broadcast(this.socket);
     }
-    
+
+    addCube() {
+        let geometry = new BoxGeometry(1, 1, 1),
+            material = MeshBasicMaterial.default(),
+            cube = new Mesh(geometry, material),
+            addChange = new AddChange(cube);
+        this.allObj.push(cube);
+        this.scene.add(cube.three);
+        this.selected = cube;
+        this.updateBox();
+        this.updateOptions();
+        this.render();
+        addChange.broadcast(this.socket);
+    }
+
     addAxis() {
         let loader = new THREE.FontLoader();
         loader.load('/fonts/helvetiker_regular.typeface.json', font => {
             let options = {
                 font,
-                size: 1,
+                size: 0.6,
                 height: 0.1
             };
             let south = new THREE.Mesh(new THREE.TextGeometry('S', options), new THREE.MeshBasicMaterial({
-                    color: 0x000000
+                    color: 0x666633
                 })
             );
-            south.position.set(-0.5, 0, this.gridSize);
+            south.position.set(-0.3, 0, this.gridSize);
             this.scene.add(south);
             let north = new THREE.Mesh(new THREE.TextGeometry('N', options), new THREE.MeshBasicMaterial({
-                    color: 0x000000
+                    color: 0x666633
                 })
             );
-            north.position.set(-0.5, 0, -this.gridSize);
+            north.position.set(-0.3, 0, -this.gridSize);
             this.scene.add(north);
             let east = new THREE.Mesh(new THREE.TextGeometry('E', options), new THREE.MeshBasicMaterial({
-                    color: 0x000000
+                    color: 0x666633
                 })
             );
             east.position.set(this.gridSize, 0, 0);
             this.scene.add(east);
             let west = new THREE.Mesh(new THREE.TextGeometry('W', options), new THREE.MeshBasicMaterial({
-                    color: 0x000000
+                    color: 0x666633
                 })
             );
-            west.position.set(-this.gridSize - 1, 0, 0);
+            west.position.set(-this.gridSize - 0.6, 0, 0);
             this.scene.add(west);
             this.render();
-        });        
+        });
     }
-    
+
     getIntersect(ev) {
         let x = (ev.clientX - canvas.offsetLeft) / canvas.width * 2 - 1,
             y = - (ev.clientY - canvas.offsetTop) / canvas.height * 2 + 1,
@@ -243,17 +302,17 @@ class Editor {
         return intersects.find(intersect => !(intersect.object instanceof THREE.GridHelper ||
             intersect.object instanceof THREE.BoundingBoxHelper));
     }
-    
+
     updateBox() {
         this.resetBox();
         if (this.selected) {
-            this.box = new THREE.BoundingBoxHelper(this.selected, 0xff0000);
+            this.box = new THREE.BoundingBoxHelper(this.selected.three, 0xff0000);
             this.box.update();
             this.scene.add(this.box);
             this.render();
         }
     }
-    
+
     resetBox() {
         if (this.box) {
             this.scene.remove(this.box);
@@ -261,9 +320,9 @@ class Editor {
             this.box = undefined;
         }
     }
-    
+
     updateOptions() {
-        let obj = this.selected;
+        let obj = this.selected ? this.selected.three : undefined;
         if (!obj) {
             return this.resetOptions();
         }
@@ -285,7 +344,7 @@ class Editor {
         $('#sphere-geometry-width-seg').val(geo.parameters.widthSegments);
         $('#sphere-geometry-height-seg').val(geo.parameters.heightSegments);
     }
-    
+
     resetOptions() {
         $('#object-type').val(undefined);
         $('#object-uuid').val(undefined);
@@ -304,10 +363,10 @@ class Editor {
         $('#sphere-geometry-width-seg').val(undefined);
         $('#sphere-geometry-height-seg').val(undefined);
     }
-    
+
     startListen() {
         this.socket.on('add', mesh => {
-            console.log('new mesh: ' + JSON.toString(mesh));
+            console.log('new mesh: ' + JSON.stringify(mesh));
             if (this.allObj.find(obj => obj.uuid === mesh.uuid)) {
                 return;
             }
@@ -316,6 +375,9 @@ class Editor {
             switch (geometry.type) {
                 case 'SphereGeometry':
                     Object.setPrototypeOf(geometry, SphereGeometry.prototype);
+                    break;
+                case 'BoxGeometry':
+                    Object.setPrototypeOf(geometry, BoxGeometry.prototype);
                     break;
                 default:
                     break;
@@ -328,21 +390,66 @@ class Editor {
                     break;
             }
             Object.setPrototypeOf(mesh, Mesh.prototype);
+            this.allObj.push(mesh);
             this.scene.add(mesh.three);
             this.render();
+        });
+
+        this.socket.on('modify', modifyChange => {
+            console.log('modify mesh: ' + JSON.stringify(modifyChange));
+            if (modifyChange.sender !== this.uuid) {
+                let obj = this.getObjById(modifyChange.uuid);
+                if (obj) {
+                    switch (modifyChange.propertyName) {
+                        case 'position.x':
+                            obj.position.x = modifyChange.newValue;
+                            break;
+                        case 'position.y':
+                            obj.position.y = modifyChange.newValue;
+                            break;
+                        case 'position.z':
+                            obj.position.z = modifyChange.newValue;
+                            break;
+                        case 'rotation.x':
+                            obj.rotation.x = modifyChange.newValue;
+                            break;
+                        case 'rotation.y':
+                            obj.rotation.y = modifyChange.newValue;
+                            break;
+                        case 'rotation.z':
+                            obj.rotation.z = modifyChange.newValue;
+                            break;
+                        case 'scale.x':
+                            obj.scale.x = modifyChange.newValue;
+                            break;
+                        case 'scale.y':
+                            obj.scale.y = modifyChange.newValue;
+                            break;
+                        case 'scale.z':
+                            obj.scale.z = modifyChange.newValue;
+                            break;
+                        default:
+                            break;
+                    }
+                    obj.update();
+                    this.updateBox();
+                    this.render();
+                }
+            }
         });
     }
 }
 
 class Change {
-    constructor(changeType) {
+    constructor(sender, changeType) {
+        this.sender = sender;
         this.changeType = changeType;
     }
 }
 
 class ModifyChange extends Change {
-    constructor(uuid, propertyName, newValue) {
-        super('modify');
+    constructor(sender, uuid, propertyName, newValue) {
+        super(sender, 'modify');
         this.uuid = uuid;
         this.propertyName = propertyName;
         this.newValue = newValue;
@@ -385,6 +492,11 @@ class Mesh {
         }
         return this._three;
     }
+    update() {
+        this._three.position.set(this.position.x, this.position.y, this.position.z);
+        this._three.rotation.set(this.rotation.x, this.rotation.y, this.rotation.z);
+        this._three.scale.set(this.scale.x, this.scale.y, this.scale.z);
+    }
 }
 
 class Geometry {
@@ -411,6 +523,24 @@ class SphereGeometry extends Geometry {
     }
 }
 
+class BoxGeometry extends Geometry {
+    constructor(width, height, depth) {
+        super('BoxGeometry');
+        this.width = width;
+        this.height = height;
+        this.depth = depth;
+    }
+    get three() {
+        if (!this._three) {
+            Object.defineProperty(this, '_three', {
+                value: new THREE.BoxGeometry(this.width, this.height, this.depth),
+                enumerable: false
+            });
+        }
+        return this._three;
+    }
+}
+
 class Material {
     constructor(type) {
         this.type = type;
@@ -430,6 +560,9 @@ class MeshBasicMaterial extends Material {
             });
         }
         return this._three;
+    }
+    static default() {
+        return new MeshBasicMaterial(0x111111);
     }
 }
 

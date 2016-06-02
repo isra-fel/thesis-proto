@@ -6,6 +6,10 @@ module.exports = app => {
             console.log('socket.io: new mesh: ' + JSON.stringify(mesh));
             io.emit('add', mesh);
         });
+        socket.on('modify', modify => {
+            console.log('socket.io: modify mesh: ' + JSON.stringify(modify));
+            io.emit('modify', modify);
+        })
         socket.on('disconnect', () => {
             console.log('socket.io: a user disconnects');
         });

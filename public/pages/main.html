@@ -6,9 +6,11 @@
 		<link rel="stylesheet" href="//cdn.bootcss.com/bootstrap/3.3.5/css/bootstrap.min.css">
 		<style>
 			body { margin: 0; min-width: 1072px; }
-			canvas { width: 800px; height: 450px; display: inline-block; }
+			canvas { width: 800px; height: 450px; display: inline-block; margin-left: 10px; }
 			.navbar { margin-bottom: 10px; }
+			.tab-content { margin-top: 10px; }
 			.forms { display: inline-block; vertical-align: top; margin-left: 10px; }
+			.flex-parent { display: flex; justify-content: space-between; }
 		</style>
 		<script src="//cdn.bootcss.com/jquery/1.11.3/jquery.min.js"></script>
 		<script src="//cdn.bootcss.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
@@ -53,65 +55,84 @@
 				<div class="tab-content">
 					<div role="tabpanel" class="tab-pane active" id="object-options">
 						<form class="object-form">
-							<label>Type</label>
-							<input type="text" id="object-type" disabled />
-							<br />
-							<label>UUID</label>
-							<input type="text" id="object-uuid" disabled />
-							<br />
-							<label>Name</label>
-							<input type="text" id="object-name" />
-							<br />
-							<label>Position</label>
-							<br />
-							<label>x</label>
-							<input type="number" id="object-position-x" />
-							<br />
-							<label>y</label>
-							<input type="number" id="object-position-y" />
-							<br />
-							<label>z</label>
-							<input type="number" id="object-position-z" />
-							<br />
-							<label>Rotation</label>
-							<br />
-							<label>x</label>
-							<input type="number" id="object-rotation-x" />
-							<br />
-							<label>y</label>
-							<input type="number" id="object-rotation-y" />
-							<br />
-							<label>z</label>
-							<input type="number" id="object-rotation-z" />
-							<br />
-							<label>Scale</label>
-							<br />
-							<label>x</label>
-							<input type="number" id="object-scale-x" />
-							<br />
-							<label>y</label>
-							<input type="number" id="object-scale-y" />
-							<br />
-							<label>z</label>
-							<input type="number" id="object-scale-z" />
-							<br />
+							<div class="flex-parent">
+								<label>Type</label>
+								<input type="text" id="object-type" disabled />
+							</div>
+							<div class="flex-parent">
+								<label>UUID</label>
+								<input type="text" id="object-uuid" disabled />
+							</div>
+							<div class="flex-parent">
+								<label>Name</label>
+								<input type="text" id="object-name" />
+							</div>
+							<div class="flex-parent">
+								<label>Position</label>
+							</div>
+							<div class="flex-parent">
+								<label>x</label>
+								<input type="number" id="object-position-x" step="0.5" />
+							</div>
+							<div class="flex-parent">
+								<label>y</label>
+								<input type="number" id="object-position-y" step="0.5" />
+							</div>
+							<div class="flex-parent">
+								<label>z</label>
+								<input type="number" id="object-position-z" step="0.5" />
+							</div>
+							<div class="flex-parent">
+								<label>Rotation</label>
+							</div>
+							<div class="flex-parent">
+								<label>x</label>
+								<input type="number" id="object-rotation-x" step="0.1" />
+							</div>
+							<div class="flex-parent">
+								<label>y</label>
+								<input type="number" id="object-rotation-y" step="0.1" />
+							</div>
+							<div class="flex-parent">
+								<label>z</label>
+								<input type="number" id="object-rotation-z" step="0.1" />
+							</div>
+							<div class="flex-parent">
+								<label>Scale</label>
+							</div>
+							<div class="flex-parent">
+								<label>x</label>
+								<input type="number" id="object-scale-x" step="0.5" />
+							</div>
+							<div class="flex-parent">
+								<label>y</label>
+								<input type="number" id="object-scale-y" step="0.5" />
+							</div>
+							<div class="flex-parent">
+								<label>z</label>
+								<input type="number" id="object-scale-z" step="0.5" />
+							</div>
 						</form>
 					</div>
 					<div role="tabpanel" class="tab-pane" id="geometry-options">
 						<form class="geometry-form">
-							<label>Type</label>
-							<input type="text" id="geometry-type" disabled />
-							<br />
+							<div class="flex-parent">
+								<label>Type</label>
+								<input type="text" id="geometry-type" disabled />
+							</div>
 							<div id="sphere-geometry-options">
-								<label>Radius</label>
-								<input type="number" id="sphere-geometry-radius" min=0 />
-								<br />
-								<label>Width segments</label>
-								<input type="number" id="sphere-geometry-width-seg" min="3" />
-								<br />
-								<label>Height segments</label>
-								<input type="number" id="sphere-geometry-height-seg" min="2" />
-								<br />
+								<div class="flex-parent">
+									<label>Radius</label>
+									<input type="number" id="sphere-geometry-radius" min=0 />
+								</div>
+								<div class="flex-parent">
+									<label>Width segments</label>
+									<input type="number" id="sphere-geometry-width-seg" min="3" />
+								</div>
+								<div class="flex-parent">
+									<label>Height segments</label>
+									<input type="number" id="sphere-geometry-height-seg" min="2" />
+								</div>
 							</div>
 						</form>
 					</div>
