@@ -12,9 +12,6 @@ class Editor {
         this.gridSize = 10;
         this.addGrid();
         this.addAxis();
-        this.bindMouseEvents();
-        this.bindMenuEvents();
-        this.bindInputEvents();
         this.selected = undefined;
         this.box = undefined;
         this.allObj = [];
@@ -22,6 +19,9 @@ class Editor {
         this.socket = io.connect('http://localhost');
         this.startListen();
         this.uuid = uuid.next();
+        this.bindMouseEvents();
+        this.bindMenuEvents();
+        this.bindInputEvents();
     }
 
     getObjById(id) {
@@ -76,6 +76,7 @@ class Editor {
     bindMenuEvents() {
         document.getElementById('add-sphere').addEventListener('click', this.addSphere.bind(this));
         document.getElementById('add-cube').addEventListener('click', this.addCube.bind(this));
+        $('#join').click(this.joinMeeting.bind(this));
     }
 
     bindInputEvents() {
@@ -182,15 +183,29 @@ class Editor {
             if (this.selected) {
                 let widthSegments = this.selected.geometry.widthSegments,
                     heightSegments = this.selected.geometry.heightSegments;
-                let newSphere = new THREE.Mesh(new THREE.SphereGeometry(ev.target.value, widthSegments, heightSegments),
-                    this.selected.three.material
-                );
-                this.scene.remove(this.selected.three);
-                this.selected = newSphere;
-                this.scene.add(this.selected);
-                this.updateBox();
-                this.render();
+                let newGeometry = new SphereGeometry(ev.target.value, widthSegments, heightSegments),
+                    newMaterial = MeshBasicMaterial.default();
+                // let newSphere = new Mesh(newGeometry, newMaterial);
+                // newSphere.position.x = this.selected.position.x;
+                // newSphere.position.y = this.selected.position.y;
+                // newSphere.position.z = this.selected.position.z;
+                // newSphere.rotation.x = this.selected.rotation.x;
+                // newSphere.rotation.y = this.selected.rotation.y;
+                // newSphere.rotation.z = this.selected.rotation.z;
+                // newSphere.scale.x = this.selected.scale.x;
+                // newSphere.scale.y = this.selected.scale.y;
+                // newSphere.scale.z = this.selected.scale.z;
+                // this.scene.remove(this.selected.three);
+                // this.selected = newSphere;
+                // this.scene.add(this.selected.three);
+                this.selected.geometry = newGeometry;
+                this.selected.update();
+
+                let modify = new ModifyChange(this.uuid, this.selected.uuid, 'geometry.sphere.radius', ev.target.value);
+                this.socket.emit('modify', modify);
             }
+            this.updateBox();
+            this.render();
         });
         $('#sphere-geometry-width-seg').change(ev => {
             if (this.selected) {
@@ -428,6 +443,8 @@ class Editor {
                         case 'scale.z':
                             obj.scale.z = modifyChange.newValue;
                             break;
+                        case 'geometry.sphere.radius':
+                            obj.geometry.radius = modifyChange.newValue;
                         default:
                             break;
                     }
@@ -437,6 +454,137 @@ class Editor {
                 }
             }
         });
+    }
+
+    joinMeeting() {
+        function setVideo(video, stream) {
+            video.setAttribute('width', 480);
+            video.setAttribute('height', 480 * (4/3));
+            video.srcObject = stream;
+            video.play();
+        }
+
+        (function shimSourceObject() {
+            if (typeof window === 'object') {
+                if (window.HTMLMediaElement &&
+                    !('srcObject' in window.HTMLMediaElement.prototype)) {
+                    // Shim the srcObject property, once, when HTMLMediaElement is found.
+                    Object.defineProperty(window.HTMLMediaElement.prototype, 'srcObject', {
+                        get: function () {
+                            return this._srcObject;
+                        },
+                        set: function (stream) {
+                            var self = this;
+                            // Use _srcObject as a private property for this shim
+                            this._srcObject = stream;
+                            if (this.src) {
+                                URL.revokeObjectURL(this.src);
+                            }
+
+                            if (!stream) {
+                                this.src = '';
+                                return;
+                            }
+                            this.src = URL.createObjectURL(stream);
+                            // We need to recreate the blob url when a track is added or
+                            // removed. Doing it manually since we want to avoid a recursion.
+                            stream.addEventListener('addtrack', function () {
+                                if (self.src) {
+                                    URL.revokeObjectURL(self.src);
+                                }
+                                self.src = URL.createObjectURL(stream);
+                            });
+                            stream.addEventListener('removetrack', function () {
+                                if (self.src) {
+                                    URL.revokeObjectURL(self.src);
+                                }
+                                self.src = URL.createObjectURL(stream);
+                            });
+                        }
+                    });
+                }
+            }
+        })();
+
+        navigator.getMedia = navigator.getUserMedia ||
+            navigator.webkitGetUserMedia ||
+            navigator.mozGetUserMedia ||
+            navigator.msGetUserMedia;
+
+        let onError = console.error.bind(console);
+        let videoMe = document.getElementById('me'),
+            videoYou = document.getElementById('you');
+
+        navigator.getMedia({video: true, audio: true}, stream => {
+            setVideo(videoMe, stream);
+        }, onError);
+        this.socket.emit('joinMeeting', this.uuid);
+        this.socket.on('answer', uuids => {
+            uuids.forEach(uuid => {
+                if (uuid !== this.uuid) {
+                    navigator.getMedia({video: true, audio: true}, stream => {
+                        setVideo(videoYou, stream);
+                    }, onError);
+                }
+            }, null);
+        });
+
+
+    //     let PeerConnection = window.RTCPeerConnection ||
+    //             window.mozRTCPeerConnection ||
+    //             window.webkitRTCPeerConnection ||
+    //             window.msRTCPeerConnection,
+
+    //         SessionDescription = window.RTCSessionDescription ||
+    //             window.mozRTCSessionDescription ||
+    //             window.webkitRTCSessionDescription ||
+    //             window.msRTCPeerConnection;
+
+    //     navigator.getMedia = navigator.getUserMedia ||
+    //         navigator.webkitGetUserMedia ||
+    //         navigator.mozGetUserMedia ||
+    //         navigator.msGetUserMedia;
+    //     let videoMe = document.getElementById('me'),
+    //         videoYou = document.getElementById('you');
+    //     let pc = new PeerConnection(null);
+    //     pc.onaddstream = obj => {
+    //         console.log('Setting video you!');
+    //         setVideo(videoYou, obj.stream);
+    //     };
+
+    //     this.socket.emit('queryOffer');
+    //     this.socket.on('answerOffer', offers => {
+    //         console.log('offers: ' + JSON.stringify(offers));
+    //         this.socket.off('answerOffer');
+    //         if (!offers.length) {
+    //             navigator.getMedia({video: true, audio: true}, stream => {
+    //                 setVideo(videoMe, stream);
+    //                 pc.addStream(stream);
+    //                 pc.createOffer(offer => {
+    //                     pc.setLocalDescription(new SessionDescription(offer), () => {
+    //                         this.socket.emit('joinMeeting', offer);
+    //                         this.socket.on('anotherMember', answer => {
+    //                             this.socket.off('anotherMember');
+    //                             pc.setRemoteDescription(new RTCSessionDescription(answer), () => {}, onError);
+    //                         });
+    //                     }, onError);
+    //                 }, onError);
+    //             }, onError);
+    //         } else {
+    //             let offer = offers[0];
+    //             navigator.getMedia({video: true, audio: true}, stream => {
+    //                 setVideo(videoMe, stream);
+    //                 pc.addStream(stream);
+    //                 pc.setRemoteDescription(new RTCSessionDescription(offer), () => {
+    //                     pc.createAnswer(answer => {
+    //                         pc.setLocalDescription(new RTCSessionDescription(answer), () => {
+    //                             this.socket.emit('answer', answer);
+    //                         }, onError);
+    //                     }, onError);
+    //                 }, onError);
+    //             }, onError);
+    //         }
+    //     });
     }
 }
 
@@ -486,13 +634,16 @@ class Mesh {
         if (!this._three) {
             Object.defineProperty(this, '_three', {
                 value: new THREE.Mesh(this.geometry.three, this.material.three),
-                enumerable: false
+                enumerable: false,
+                writable: true
             });
             this._three.CEModel = this;
         }
         return this._three;
     }
     update() {
+        this._three = new THREE.Mesh(this.geometry.three, this.material.three);
+        this._three.CEModel = this;
         this._three.position.set(this.position.x, this.position.y, this.position.z);
         this._three.rotation.set(this.rotation.x, this.rotation.y, this.rotation.z);
         this._three.scale.set(this.scale.x, this.scale.y, this.scale.z);
