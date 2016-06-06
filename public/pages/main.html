@@ -11,6 +11,8 @@
 			.tab-content { margin-top: 10px; }
 			.forms { display: inline-block; vertical-align: top; margin-left: 10px; }
 			.flex-parent { display: flex; justify-content: space-between; }
+			.char { display: inline-block; }
+			video { width: 480px; height: 360px; }
 		</style>
 		<script src="//cdn.bootcss.com/jquery/1.11.3/jquery.min.js"></script>
 		<script src="//cdn.bootcss.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
@@ -142,6 +144,13 @@
 						</form>
 					</div>
 				</div>
+			</div>
+			<div class="chat">
+				<div>
+					<button id="join" class="btn btn-default">Join video chatting</button>
+				</div>
+				<video id="me" autoplay></video>
+				<video id="you" autoplay></video>
 			</div>
 		</div>
 		<script src="../lib/three.min.js"></script>
