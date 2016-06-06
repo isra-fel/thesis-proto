@@ -198,8 +198,10 @@ class Editor {
                 // this.scene.remove(this.selected.three);
                 // this.selected = newSphere;
                 // this.scene.add(this.selected.three);
+                this.scene.remove(this.selected.three);
                 this.selected.geometry = newGeometry;
                 this.selected.update();
+                this.scene.add(this.selected.three);
 
                 let modify = new ModifyChange(this.uuid, this.selected.uuid, 'geometry.sphere.radius', ev.target.value);
                 this.socket.emit('modify', modify);
@@ -445,10 +447,14 @@ class Editor {
                             break;
                         case 'geometry.sphere.radius':
                             obj.geometry.radius = modifyChange.newValue;
+                            obj.geometry.update();
+                            break;
                         default:
                             break;
                     }
+                    this.scene.remove(obj.three);
                     obj.update();
+                    this.scene.add(obj.three);
                     this.updateBox();
                     this.render();
                 }
@@ -667,10 +673,14 @@ class SphereGeometry extends Geometry {
         if (!this._three) {
             Object.defineProperty(this, '_three', {
                 value: new THREE.SphereGeometry(this.radius, this.widthSegments, this.heightSegments),
-                enumerable: false
+                enumerable: false,
+                writable: true
             });
         }
         return this._three;
+    }
+    update() {
+        this._three = new THREE.SphereGeometry(this.radius, this.widthSegments, this.heightSegments);
     }
 }
 
